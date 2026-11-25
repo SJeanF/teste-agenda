@@ -1,57 +1,69 @@
 describe('Testes na Agenda de Contatos', () => {
-  const url = 'https://ebac-agenda-contatos-tan.vercel.app/'
-
-  const preencherFormulario = (nome, email, telefone) => {
-    cy.get('input[type="text"]').clear().type(nome)
-    cy.get('input[type="email"]').clear().type(email)
-    cy.get('input[type="tel"]').clear().type(telefone)
-    cy.get('button[type="submit"]').click()
-  }
-
   beforeEach(() => {
-    cy.visit(url)
+    cy.visit('https://ebac-agenda-contatos-tan.vercel.app/')
   })
 
   it('Deve adicionar um novo contato', () => {
     const nome = 'João Silva'
-    const email = `joao.inclusao.${Date.now()}@teste.com`
+    const emailUnico = `joao.${Date.now()}@silva.com`
     const telefone = '11999999999'
 
-    preencherFormulario(nome, email, telefone)
+    cy.get('input[type="text"]').type(nome)
+    cy.get('input[type="email"]').type(emailUnico)
+    cy.get('input[type="tel"]').type(telefone)
+    cy.get('button[type="submit"]').click()
 
-    cy.contains('.contato', email).within(() => {
+    // Localiza o card específico pelo e-mail único e valida os dados dentro dele
+    cy.contains('.contato', emailUnico).within(() => {
       cy.contains(nome).should('be.visible')
+      cy.contains(emailUnico).should('be.visible')
       cy.contains(telefone).should('be.visible')
-      cy.contains(email).should('be.visible')
     })
   })
 
   it('Deve alterar um contato existente', () => {
-    const emailOriginal = `joao.edicao.${Date.now()}@teste.com`
-    preencherFormulario('Contato Para Editar', emailOriginal, '11977777777')
+    const emailOriginal = `editar.${Date.now()}@silva.com`
+    const emailEditado = `editado.${Date.now()}@silva.com`
 
+    // Cria um contato próprio para isolar o cenário
+    cy.get('input[type="text"]').type('João Silva')
+    cy.get('input[type="email"]').type(emailOriginal)
+    cy.get('input[type="tel"]').type('11999999999')
+    cy.get('button[type="submit"]').click()
+
+    // Localiza o card pelo e-mail original e clica no botão de editar dele
     cy.contains('.contato', emailOriginal).find('.edit').click()
 
-    const nomeEditado = 'João Silva Editado'
-    const emailEditado = `joao.editado.${Date.now()}@teste.com`
-    const telefoneEditado = '11888888888'
+    // Preenche os novos dados e salva
+    cy.get('input[type="text"]').clear().type('João Silva Editado')
+    cy.get('input[type="email"]').clear().type(emailEditado)
+    cy.get('input[type="tel"]').clear().type('11888888888')
+    cy.get('button[type="submit"]').click()
 
-    preencherFormulario(nomeEditado, emailEditado, telefoneEditado)
-
+    // Confere os dados atualizados dentro do card específico
     cy.contains('.contato', emailEditado).within(() => {
-      cy.contains(nomeEditado).should('be.visible')
-      cy.contains(telefoneEditado).should('be.visible')
+      cy.contains('João Silva Editado').should('be.visible')
       cy.contains(emailEditado).should('be.visible')
+      cy.contains('11888888888').should('be.visible')
     })
   })
 
   it('Deve remover um contato existente', () => {
-    const emailRemocao = `joao.remocao.${Date.now()}@teste.com`
-    preencherFormulario('Contato Para Remover', emailRemocao, '11966666666')
+    const emailRemover = `remover.${Date.now()}@silva.com`
 
-    cy.contains('.contato', emailRemocao).should('be.visible')
-    cy.contains('.contato', emailRemocao).find('.delete').click()
+    // Cria um contato próprio para isolar o cenário
+    cy.get('input[type="text"]').type('Contato Para Remover')
+    cy.get('input[type="email"]').type(emailRemover)
+    cy.get('input[type="tel"]').type('11777777777')
+    cy.get('button[type="submit"]').click()
 
-    cy.contains('.contato', emailRemocao).should('not.exist')
+    // Garante que o card foi renderizado antes da exclusão
+    cy.contains('.contato', emailRemover).should('be.visible')
+
+    // Localiza o card pelo e-mail e clica no botão de deletar dele
+    cy.contains('.contato', emailRemover).find('.delete').click()
+
+    // Confirma que o contato específico desapareceu da tela
+    cy.contains('.contato', emailRemover).should('not.exist')
   })
 })
